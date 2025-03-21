@@ -10,14 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Debug SSH_PRIVATE_KEY (Check key length)
+      run: |
+        echo "Private key length: ${#SSH_PRIVATE_KEY}"
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+    
     - name: Install SSH keys
-      # Check this thread to understand why it's needed: https://stackoverflow.com/a/70447517
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
     - name: Connect and pull
       run: ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull && exit"
+    
     - name: Cleanup
       run: rm -rf ~/.ssh
