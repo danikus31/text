@@ -1,23 +1,41 @@
+name: Deploy on Push
+
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-  
+
 jobs:
-  run_pull:
-    name: run pull
+  deploy:
+    name: Deploy via SSH
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: install ssh keys
-      # check this thread to understand why its needed:
-      # https://stackoverflow.com/a/70447517
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install SSH Keys
       run: |
+        mkdir -p ~/.ssh
         install -m 600 -D /dev/null ~/.ssh/id_rsa
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.SSH_HOST }} > ~/.ssh/known_hosts
-    - name: connect and pull
-      run: ssh -p 2323  ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull && exit"
-    - name: cleanup
+        ssh-keyscan -p 2323 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        echo "SSH key added."
+
+    - name: Configure SSH
+      run: |
+        echo "Host myserver
+              HostName ${{ secrets.SSH_HOST }}
+              User ${{ secrets.SSH_USER }}
+              Port 2323
+              IdentityFile ~/.ssh/id_rsa
+              StrictHostKeyChecking no" > ~/.ssh/config
+        chmod 600 ~/.ssh/config
+        echo "SSH configuration added."
+
+    - name: Connect and Pull Latest Code
+      run: ssh myserver "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
+
+    - name: Cleanup SSH Keys
       run: rm -rf ~/.ssh
