@@ -18,10 +18,10 @@ jobs:
     - name: Install SSH Keys
       run: |
         mkdir -p ~/.ssh
-        install -m 600 -D /dev/null ~/.ssh/id_rsa
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" | sed 's/\r$//' > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -p 2323 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-        echo "SSH key added."
+
     - name: Debug SSH Key
       run: |
         ls -la ~/.ssh
@@ -36,10 +36,9 @@ jobs:
               IdentityFile ~/.ssh/id_rsa
               StrictHostKeyChecking no" > ~/.ssh/config
         chmod 600 ~/.ssh/config
-        echo "SSH configuration added."
 
-    - name: Connect and Pull Latest Code
-      run: ssh myserver "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
+    - name: Connect and Pull Latest Code (Debug)
+      run: ssh -vvv myserver "cd ${{ secrets.WORK_DIR }} && git checkout ${{ secrets.MAIN_BRANCH }} && git pull"
 
     - name: Cleanup SSH Keys
       run: rm -rf ~/.ssh
