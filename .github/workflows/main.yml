@@ -22,6 +22,10 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         ssh-keyscan -p 2323 -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
         echo "SSH key added."
+- name: Debug SSH Key
+  run: |
+    ls -la ~/.ssh
+    file ~/.ssh/id_rsa
 
     - name: Configure SSH
       run: |
